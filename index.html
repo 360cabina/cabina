@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>QR Video 360</title>
+
+<!-- FUENTES -->
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Pacifico&display=swap" rel="stylesheet">
+
+<style>
+body {
+  margin: 0;
+  background: url('./fondo.jpg') no-repeat center center/cover;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* oscurecer fondo */
+body::before {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+}
+
+/* contenedor */
+.container {
+  position: relative;
+  text-align: center;
+  color: white;
+}
+
+/* TITULO NEON */
+h1 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 60px;
+  color: #ff00cc;
+  text-shadow:
+    0 0 10px #ff00cc,
+    0 0 20px #ff00cc,
+    0 0 40px #ff00cc;
+}
+
+/* QR */
+#qr {
+  width: 320px;
+  margin-top: 20px;
+  border-radius: 20px;
+  box-shadow:
+    0 0 20px #ff00cc,
+    0 0 40px #ff00cc;
+}
+
+/* NOMBRE */
+#nombre {
+  margin-top: 25px;
+  font-family: 'Pacifico', cursive;
+  font-size: 40px;
+  color: #ff66ff;
+  text-shadow:
+    0 0 10px #ff66ff,
+    0 0 20px #ff00cc;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>DESCARGA TU VIDEO</h1>
+  <img id="qr">
+  <div id="nombre"></div>
+</div>
+
+<script>
+let ultimoLink = "";
+let linkEstable = "";
+let temporizador = null;
+
+async function cargarQR() {
+  try {
+    const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTkQ1Ou-lc_68dncM1P-58VZPmNYYa4T1z3grXWrxgp3YloABytN7u6I-L3WNbGS8BmJr4KSIX66c1H/pub?output=csv&nocache=" + Date.now();
+
+    const res = await fetch(url);
+    const text = await res.text();
+
+    const filas = text.split("\n");
+
+    let link = "";
+    let nombre = "";
+
+    // 🔥 SOLO última fila válida
+    for (let i = filas.length - 1; i >= 0; i--) {
+      let fila = filas[i].trim();
+      if (!fila) continue;
+
+      let partes = fila.split(",");
+      if (partes.length >= 2) {
+        let n = partes[0].replace(/"/g, "").trim();
+        let l = partes[1].replace(/"/g, "").trim();
+
+        if (l.startsWith("http")) {
+          nombre = n;
+          link = l;
+          break;
+        }
+      }
+    }
+
+    if (!link) return;
+
+    // 🔥 ANTI PARPADEO
+    if (link !== ultimoLink) {
+      ultimoLink = link;
+
+      clearTimeout(temporizador);
+
+      temporizador = setTimeout(() => {
+        if (ultimoLink !== linkEstable) {
+          linkEstable = ultimoLink;
+
+          let qr = "https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=" + encodeURIComponent(linkEstable);
+
+          document.getElementById("qr").src = qr;
+          document.getElementById("nombre").innerText = nombre;
+        }
+      }, 1000);
+    }
+
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+cargarQR();
+setInterval(cargarQR, 2000);
+</script>
+
+</body>
+</html>
