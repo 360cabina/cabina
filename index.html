@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <title>QR Video 360</title>
 
-<!-- FUENTES -->
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Pacifico&display=swap" rel="stylesheet">
 
 <style>
@@ -17,7 +16,7 @@ body {
   align-items: center;
 }
 
-/* oscurecer fondo */
+/* oscurecer */
 body::before {
   content: "";
   position: absolute;
@@ -26,22 +25,18 @@ body::before {
   background: rgba(0,0,0,0.6);
 }
 
-/* contenedor */
 .container {
   position: relative;
   text-align: center;
   color: white;
 }
 
-/* TITULO NEON */
+/* TITULO */
 h1 {
   font-family: 'Orbitron', sans-serif;
   font-size: 60px;
   color: #ff00cc;
-  text-shadow:
-    0 0 10px #ff00cc,
-    0 0 20px #ff00cc,
-    0 0 40px #ff00cc;
+  text-shadow: 0 0 10px #ff00cc, 0 0 30px #ff00cc;
 }
 
 /* QR */
@@ -49,9 +44,7 @@ h1 {
   width: 320px;
   margin-top: 20px;
   border-radius: 20px;
-  box-shadow:
-    0 0 20px #ff00cc,
-    0 0 40px #ff00cc;
+  box-shadow: 0 0 20px #ff00cc, 0 0 40px #ff00cc;
 }
 
 /* NOMBRE */
@@ -60,9 +53,7 @@ h1 {
   font-family: 'Pacifico', cursive;
   font-size: 40px;
   color: #ff66ff;
-  text-shadow:
-    0 0 10px #ff66ff,
-    0 0 20px #ff00cc;
+  text-shadow: 0 0 10px #ff66ff, 0 0 20px #ff00cc;
 }
 </style>
 </head>
@@ -76,15 +67,14 @@ h1 {
 </div>
 
 <script>
-let ultimoLink = "";
-let linkEstable = "";
-let temporizador = null;
+let ultimoMostrado = "";
 
+// 🔥 función robusta
 async function cargarQR() {
   try {
-    const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTkQ1Ou-lc_68dncM1P-58VZPmNYYa4T1z3grXWrxgp3YloABytN7u6I-L3WNbGS8BmJr4KSIX66c1H/pub?output=csv&nocache=" + Date.now();
+    const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTkQ1Ou-lc_68dncM1P-58VZPmNYYa4T1z3grXWrxgp3YloABytN7u6I-L3WNbGS8BmJr4KSIX66c1H/pub?output=csv&t=" + Date.now();
 
-    const res = await fetch(url);
+    const res = await fetch(url, { cache: "no-store" });
     const text = await res.text();
 
     const filas = text.split("\n");
@@ -92,12 +82,13 @@ async function cargarQR() {
     let link = "";
     let nombre = "";
 
-    // 🔥 SOLO última fila válida
+    // 🔥 SOLO última válida real
     for (let i = filas.length - 1; i >= 0; i--) {
       let fila = filas[i].trim();
       if (!fila) continue;
 
       let partes = fila.split(",");
+
       if (partes.length >= 2) {
         let n = partes[0].replace(/"/g, "").trim();
         let l = partes[1].replace(/"/g, "").trim();
@@ -112,31 +103,24 @@ async function cargarQR() {
 
     if (!link) return;
 
-    // 🔥 ANTI PARPADEO
-    if (link !== ultimoLink) {
-      ultimoLink = link;
+    // 🔥 BLOQUEO TOTAL: solo cambia si es distinto
+    if (link === ultimoMostrado) return;
 
-      clearTimeout(temporizador);
+    ultimoMostrado = link;
 
-      temporizador = setTimeout(() => {
-        if (ultimoLink !== linkEstable) {
-          linkEstable = ultimoLink;
+    let qr = "https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=" + encodeURIComponent(link);
 
-          let qr = "https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=" + encodeURIComponent(linkEstable);
-
-          document.getElementById("qr").src = qr;
-          document.getElementById("nombre").innerText = nombre;
-        }
-      }, 1000);
-    }
+    document.getElementById("qr").src = qr;
+    document.getElementById("nombre").innerText = nombre;
 
   } catch (e) {
     console.error(e);
   }
 }
 
+// refresco más estable
 cargarQR();
-setInterval(cargarQR, 2000);
+setInterval(cargarQR, 3000);
 </script>
 
 </body>
